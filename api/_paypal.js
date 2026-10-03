@@ -7,8 +7,8 @@
 const SKIN_PRICES = {
   pig: '0.99',
   goat: '0.99',
-  horse: '0.99',
-  bull: '0.99',
+  horse: '1.99',
+  bull: '1.99',
 };
 
 function paypalApiBase() {
