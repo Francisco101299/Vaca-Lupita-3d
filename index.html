@@ -118,6 +118,16 @@
   #rotateOverlay h2{font-size:20px;margin:0 0 8px;}
   #rotateOverlay p{font-size:13px;opacity:0.85;margin:0;max-width:280px;line-height:1.4;}
   @keyframes rotateHint{0%,100%{transform:rotate(0deg);}50%{transform:rotate(90deg);}}
+  /* CAMBIO NUEVO: animacion del boton flotante "Personajes premium" para que destaque.
+     Combina un pulso suave (se agranda un poco) con un brillo que crece y se desvanece
+     alrededor, en vez de un parpadeo simple que puede resultar molesto a la vista. */
+  #premiumSkinsBtn{animation:premiumPulse 1.8s ease-in-out infinite;}
+  @keyframes premiumPulse{
+    0%,100%{transform:translateY(-50%) scale(1);box-shadow:0 4px 14px rgba(0,0,0,.4),0 0 0 0 rgba(255,196,57,0.6);}
+    50%{transform:translateY(-50%) scale(1.08);box-shadow:0 4px 18px rgba(0,0,0,.45),0 0 0 14px rgba(255,196,57,0);}
+  }
+  #premiumSkinsBtn span:first-child{display:inline-block;animation:premiumSparkle 1.8s ease-in-out infinite;}
+  @keyframes premiumSparkle{0%,100%{transform:rotate(0deg) scale(1);}50%{transform:rotate(15deg) scale(1.15);}}
 </style>
 </head>
 <body>
@@ -152,6 +162,14 @@
       <button id="levelsBtn" class="invisBtn" style="left:4.79%;top:62.42%;width:40.6%;height:11.98%;"></button>
       <button id="costumesBtn" class="invisBtn" style="left:4.79%;top:77.55%;width:40.6%;height:12.61%;"></button>
     </div>
+    <!-- CAMBIO NUEVO: boton flotante aparte, del lado derecho de la pantalla (donde queda
+         libre la escena 3D de fondo, ya que el panel de botones esta pegado a la izquierda),
+         para destacar los personajes premium. Va dentro de #startMenu para que se oculte y
+         se muestre junto con el resto del menu principal, sin tocar nada del JS existente. -->
+    <button id="premiumSkinsBtn" style="position:absolute;right:3%;top:50%;transform:translateY(-50%);z-index:35;display:flex;flex-direction:column;align-items:center;gap:2px;background:linear-gradient(180deg,#ffe28a,#ffc439);border:3px solid #fff;border-radius:50%;width:15vw;max-width:84px;height:15vw;max-height:84px;box-shadow:0 4px 12px rgba(0,0,0,.4);cursor:pointer;padding:4px;box-sizing:border-box;">
+      <span style="font-size:clamp(16px,5.4vw,26px);line-height:1;">✨</span>
+      <span style="font-size:clamp(9px,2vw,10.5px);font-weight:bold;color:#5a3200;text-align:center;line-height:1.1;">Personajes<br>premium</span>
+    </button>
   </div>
   <script>
     // CAMBIO NUEVO: chequeo minimo e inmediato de localStorage, ANTES de que se cargue
@@ -177,9 +195,17 @@
   <div id="costumeSelect" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;text-shadow:2px 2px 0 #000;background:rgba(0,0,0,0.55);padding:20px 22px;border-radius:16px;z-index:30;max-width:92vw;width:440px;box-sizing:border-box;max-height:88vh;overflow-y:auto;">
     <h1 style="font-size:26px;margin:0 0 12px;">👕 Trajes</h1>
     <div id="costumeGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;"></div>
-    <h2 style="font-size:16px;margin:4px 0 8px;">🐷 Personajes premium</h2>
-    <div id="skinGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;"></div>
     <button id="backFromCostumesBtn" style="padding:10px 22px;font-size:15px;border:none;border-radius:8px;background:#ffcc00;font-weight:bold;cursor:pointer;">Volver</button>
+  </div>
+  <!-- CAMBIO NUEVO: pantalla dedicada solo a los personajes premium (sin trajes), separados
+       por categoria. Se abre desde el boton flotante "Personajes premium" del menu. -->
+  <div id="premiumSkinsScreen" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;text-shadow:2px 2px 0 #000;background:rgba(0,0,0,0.55);padding:20px 22px;border-radius:16px;z-index:30;max-width:92vw;width:440px;box-sizing:border-box;max-height:88vh;overflow-y:auto;">
+    <h1 style="font-size:24px;margin:0 0 12px;">✨ Personajes premium</h1>
+    <h2 style="font-size:15px;margin:4px 0 8px;">🐾 Clasicos</h2>
+    <div id="skinGridClassic" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;"></div>
+    <h2 style="font-size:15px;margin:4px 0 8px;">⭐ Especiales</h2>
+    <div id="skinGridSpecial" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;"></div>
+    <button id="backFromPremiumBtn" style="padding:10px 22px;font-size:15px;border:none;border-radius:8px;background:#ffcc00;font-weight:bold;cursor:pointer;">Volver</button>
   </div>
   <!-- CAMBIO NUEVO: modal de compra de personajes premium con PayPal -->
   <div id="payModal" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.75);z-index:50;">
@@ -1411,14 +1437,16 @@ const headPattern = makeCowPatternTexture(3);
 // ---------- CAMBIO NUEVO: personajes premium (comprables con PayPal) ----------
 // Reutilizan el mismo cuerpo/rig de la vaca (mismas animaciones, patas, cola, cuernos),
 // solo cambia el pelaje (textura) y el color de orejas/hocico, via applyCowSkin() mas abajo.
+// CAMBIO NUEVO: category separa los personajes en "clasico" (precio de entrada, mas
+// economico) y "especial" (animales mas grandes/vistosos, precio un poco mayor).
 const PREMIUM_SKINS = {
-  pig:   { name:'Cerdito', emoji:'🐷', price:'US$0.99',
+  pig:   { name:'Cerdito', emoji:'🐷', price:'US$0.99', category:'clasico',
            body: makeCowPatternTexture(2,0,'#f7c9d1','#e8a3b3'), head: makeCowPatternTexture(1,0,'#f7c9d1','#e8a3b3'), earSnout:0xf29bb0 },
-  goat:  { name:'Cabra',   emoji:'🐐', price:'US$0.99',
+  goat:  { name:'Cabra',   emoji:'🐐', price:'US$0.99', category:'clasico',
            body: makeCowPatternTexture(2,0,'#efe9da','#b9ad93'), head: makeCowPatternTexture(1,0,'#efe9da','#b9ad93'), earSnout:0xcac2ab },
-  horse: { name:'Caballo', emoji:'🐴', price:'US$0.99',
+  horse: { name:'Caballo', emoji:'🐴', price:'US$1.99', category:'especial',
            body: makeCowPatternTexture(1,0,'#8a5a34','#6e4425'), head: makeCowPatternTexture(1,0,'#8a5a34','#6e4425'), earSnout:0x5b3a22 },
-  bull:  { name:'Toro',    emoji:'🐂', price:'US$0.99',
+  bull:  { name:'Toro',    emoji:'🐂', price:'US$1.99', category:'especial',
            body: makeCowPatternTexture(1,0,'#4a3428','#3a281d'), head: makeCowPatternTexture(1,0,'#4a3428','#3a281d'), earSnout:0x2c1f18 },
 };
 // aplica (o quita, con skinKey null) el pelaje premium sobre el mismo modelo de la vaca
@@ -3842,7 +3870,6 @@ function openCostumeSelect(){
   hud.style.display = 'none';
   controlsEl.style.display = 'none';
   renderCostumeSelect();
-  renderSkinGrid();
   costumeSelect.style.display = 'block';
 }
 // CAMBIO NUEVO: un dibujo (SVG) distinto para cada traje en vez del mismo emoji de vaca
@@ -3901,7 +3928,9 @@ backFromCostumesBtn.addEventListener('click', ()=>{
 });
 
 // ---------- CAMBIO NUEVO: personajes premium comprables con PayPal ----------
-const skinGrid = document.getElementById('skinGrid');
+const skinGridClassic = document.getElementById('skinGridClassic');
+const skinGridSpecial = document.getElementById('skinGridSpecial');
+const premiumSkinsScreen = document.getElementById('premiumSkinsScreen');
 const payModal = document.getElementById('payModal');
 const payModalEmoji = document.getElementById('payModalEmoji');
 const payModalTitle = document.getElementById('payModalTitle');
@@ -3909,10 +3938,13 @@ const payModalPrice = document.getElementById('payModalPrice');
 const paypalButtonContainer = document.getElementById('paypalButtonContainer');
 const payModalClose = document.getElementById('payModalClose');
 
-function renderSkinGrid(){
-  skinGrid.innerHTML = '';
+// CAMBIO NUEVO: dibuja las tarjetas de un grupo de personajes (por categoria) dentro
+// del contenedor que le pases. Se usa dos veces: una para "clasico" y otra para "especial".
+function renderSkinGroup(container, category){
+  container.innerHTML = '';
   for(const key in PREMIUM_SKINS){
     const skin = PREMIUM_SKINS[key];
+    if(skin.category !== category) continue;
     const unlocked = unlockedSkins[key];
     const card = document.createElement('div');
     card.className = 'costumeCard premiumCard' + (unlocked ? '' : ' locked') + (selectedSkin===key ? ' selected' : '');
@@ -3936,9 +3968,28 @@ function renderSkinGrid(){
         openPayModal(key);
       });
     }
-    skinGrid.appendChild(card);
+    container.appendChild(card);
   }
 }
+function renderSkinGrid(){
+  renderSkinGroup(skinGridClassic, 'clasico');
+  renderSkinGroup(skinGridSpecial, 'especial');
+}
+// CAMBIO NUEVO: pantalla separada solo para personajes premium (sin la seccion de trajes)
+function openPremiumScreen(){
+  hideStartMenu();
+  levelSelect.style.display = 'none';
+  instructionsScreen.style.display = 'none';
+  hud.style.display = 'none';
+  controlsEl.style.display = 'none';
+  renderSkinGrid();
+  premiumSkinsScreen.style.display = 'block';
+}
+document.getElementById('backFromPremiumBtn').addEventListener('click', ()=>{
+  sfxClick();
+  premiumSkinsScreen.style.display = 'none';
+  showStartMenu();
+});
 
 // ---- Configuracion de pago (con verificacion real en el servidor, via Vercel) ----
 // El juego redirige a /api/create-order, que crea la orden en PayPal y te manda a pagar.
@@ -4493,6 +4544,9 @@ continueBtn.addEventListener('click', ()=>{ ensureAudio(); sfxClick(); tryLockLa
 levelsBtn.addEventListener('click', ()=>{ ensureAudio(); sfxClick(); tryLockLandscape(); startMusic(); openLevelSelect(); });
 // "Trajes": pantalla dedicada con los 11 trajes (desbloqueados y bloqueados)
 costumesBtn.addEventListener('click', ()=>{ ensureAudio(); sfxClick(); tryLockLandscape(); startMusic(); openCostumeSelect(); });
+// CAMBIO NUEVO: boton flotante "Personajes premium" del lado derecho del menu; abre la
+// misma pantalla de trajes que "Trajes", solo que mas visible y directo a los premium.
+document.getElementById('premiumSkinsBtn').addEventListener('click', ()=>{ ensureAudio(); sfxClick(); tryLockLandscape(); startMusic(); openPremiumScreen(); });
 
 </script>
 </body>
