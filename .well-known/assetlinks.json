@@ -1,1 +1,8 @@
-
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.vaca_lupita_3d.twa",
+        "sha256_cert_fingerprints": ["07:51:DF:C0:56:CD:F8:31:D8:3F:7D:E5:98:E2:51:D2:20:4A:D3:A6:24:4F:4E:D9:F5:C8:F1:2A:77:A5:03:B5"]
+      }
+    }]
