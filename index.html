@@ -19,6 +19,8 @@
   #wrap{position:relative;width:100vw;height:100vh;height:100dvh;}
   canvas{display:block;width:100%;height:100%;}
   #hud{position:absolute;top:calc(10px + var(--safe-t));left:calc(10px + var(--safe-l));color:#fff;font-size:20px;font-weight:bold;text-shadow:2px 2px 0 #000;display:none;z-index:5;}
+  /* CAMBIO NUEVO: boton "Salir" visible durante toda la partida, arriba a la derecha */
+  #exitGameBtn{position:absolute;top:calc(10px + var(--safe-t));right:calc(10px + var(--safe-r));z-index:6;padding:8px 14px;font-size:13px;font-weight:bold;border:none;border-radius:20px;background:rgba(0,0,0,0.45);color:#fff;text-shadow:1px 1px 0 #000;display:none;cursor:pointer;}
   #hud div{margin-bottom:4px;}
   /* Pulido visual v2: capa de efectos muy ligera, sin interferir con el juego */
   #fxLayer{position:absolute;inset:0;pointer-events:none;z-index:8;overflow:hidden;}
@@ -92,6 +94,10 @@
   .controlSchemeBtn.selected{border-color:#ffcc00;background:rgba(255,204,0,0.22);}
   #joystick{width:116px;height:116px;border-radius:50%;background:rgba(20,30,35,.30);border:2px solid rgba(255,255,255,.48);box-shadow:0 5px 18px rgba(0,0,0,.18), inset 0 0 0 7px rgba(255,255,255,.06);position:relative;touch-action:none;pointer-events:auto;user-select:none;-webkit-user-select:none;transition:box-shadow .15s ease, border-color .15s ease;}
   #joystick::after{content:'';position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:rgba(255,255,255,.38);}
+  /* CAMBIO NUEVO: flechas tactiles (alternativa al joystick cuando se elige "Flechas") */
+  #dpad{display:none;width:132px;height:132px;flex-shrink:0;grid-template-columns:44px 44px 44px;grid-template-rows:44px 44px 44px;grid-template-areas:". up ." "left . right" ". down .";gap:0;touch-action:none;}
+  .dpadBtn{display:flex;align-items:center;justify-content:center;background:rgba(20,30,35,.30);border:2px solid rgba(255,255,255,.48);border-radius:10px;color:#fff;font-size:18px;user-select:none;-webkit-user-select:none;touch-action:none;pointer-events:auto;}
+  .dpadBtn:active, .dpadBtn.active{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.9);}
   /* CAMBIO NUEVO (joystick mas "profesional"): mientras se arrastra, el aro brilla un poco
      mas para dar feedback claro de que esta activo. */
   #joystick.active{border-color:rgba(255,255,255,.85);box-shadow:0 5px 18px rgba(0,0,0,.18), inset 0 0 0 7px rgba(255,255,255,.12), 0 0 16px rgba(255,255,255,.25);}
@@ -155,6 +161,7 @@
     <div>🥛 Vidas: <span id="lives">3</span></div>
     <div id="levelProgress"><div id="levelProgressBar"></div></div>
   </div>
+  <button id="exitGameBtn">✖ Salir</button>
   <div id="startMenu">
     <!-- CAMBIO NUEVO (v3): siguiendo el pedido del usuario, ahora se usa la imagen COMPLETA
          del panel (titulo + 4 botones) tal cual la subio, sin recortar cada boton por
@@ -256,6 +263,15 @@
   </div>
   <div id="controls">
     <div id="joystick" aria-label="Joystick de movimiento"><div id="joystickKnob"></div></div>
+    <!-- CAMBIO NUEVO: flechas tactiles en pantalla, para poder jugar con el esquema
+         "Flechas" tambien desde el celular (sin teclado fisico). Dispara los mismos
+         flags (move.fwd/back/left/right) que ya usa el teclado. -->
+    <div id="dpad" aria-label="Flechas de movimiento">
+      <button id="dpadUp" class="dpadBtn" style="grid-area:up;">▲</button>
+      <button id="dpadLeft" class="dpadBtn" style="grid-area:left;">◀</button>
+      <button id="dpadRight" class="dpadBtn" style="grid-area:right;">▶</button>
+      <button id="dpadDown" class="dpadBtn" style="grid-area:down;">▼</button>
+    </div>
     <div id="jumpBtn">SALTAR</div>
   </div>
 </div>
@@ -609,6 +625,19 @@ const startBg = document.getElementById('startBg');
 // de tocar startBg en cada lugar del codigo que muestra u oculta el menu.
 function showStartMenu(mode){ startMenu.style.display = mode || 'block'; startBg.style.display = 'block'; }
 function hideStartMenu(){ startMenu.style.display = 'none'; startBg.style.display = 'none'; }
+// CAMBIO NUEVO: boton "Salir" visible durante toda la partida, para volver al menu
+// principal sin tener que perder una vida o terminar el nivel.
+function exitToMenu(){
+  if(!confirm('¿Salir al menú? Se pierde el progreso de este intento del nivel (el avance guardado entre niveles no se pierde).')) return;
+  gameOver = true;
+  move.fwd = move.back = move.left = move.right = false; // CAMBIO: por si quedo una flecha "apretada"
+  hud.style.display = 'none';
+  exitGameBtn.style.display = 'none';
+  controlsEl.style.display = 'none';
+  levelProgress.style.display = 'none';
+  msg.style.display = 'none';
+  showStartMenu();
+}
 const continueBtn = document.getElementById('continueBtn');
 // CAMBIO NUEVO: referencias del menu principal de 4 opciones
 const newGameBtn = document.getElementById('newGameBtn');
@@ -623,6 +652,8 @@ const costumeGrid = document.getElementById('costumeGrid');
 const backFromCostumesBtn = document.getElementById('backFromCostumesBtn');
 const instructionsScreen = document.getElementById('instructionsScreen');
 const instrTitle = document.getElementById('instrTitle');
+const exitGameBtn = document.getElementById('exitGameBtn');
+exitGameBtn.addEventListener('click', ()=>{ sfxClick(); exitToMenu(); });
 const instrStartBtn = document.getElementById('instrStartBtn');
 const instrBackBtn = document.getElementById('instrBackBtn');
 // CAMBIO NUEVO: esquema de control elegido ('joystick' o 'keyboard'). El teclado funciona
@@ -3561,6 +3592,23 @@ const X_MIN = -TRACK_W/2+0.6, X_MAX = TRACK_W/2-0.6;
 
 // ---------- Controles ----------
 const move = {fwd:false, back:false, left:false, right:false};
+// CAMBIO NUEVO: flechas tactiles. Cada boton prende/apaga el mismo flag que usa el teclado
+// (move.fwd/back/left/right), asi que el resto del codigo de movimiento no necesita saber
+// si el jugador esta usando teclado fisico o estos botones en pantalla.
+const dpad = document.getElementById('dpad');
+function wireDpadBtn(id, key){
+  const el = document.getElementById(id);
+  const press = (e)=>{ e.preventDefault(); move[key]=true; el.classList.add('active'); };
+  const release = (e)=>{ if(e) e.preventDefault(); move[key]=false; el.classList.remove('active'); };
+  el.addEventListener('pointerdown', press);
+  el.addEventListener('pointerup', release);
+  el.addEventListener('pointercancel', release);
+  el.addEventListener('pointerleave', release);
+}
+wireDpadBtn('dpadUp','fwd');
+wireDpadBtn('dpadDown','back');
+wireDpadBtn('dpadLeft','left');
+wireDpadBtn('dpadRight','right');
 const joystick = document.getElementById('joystick');
 const joystickKnob = document.getElementById('joystickKnob');
 let joystickPointerId = null;
@@ -3707,10 +3755,14 @@ function startGame(levelIndex){
   costumeSelect.style.display = 'none'; // CAMBIO: por si se entraba directo desde Trajes
   hideStartMenu();
   hud.style.display = 'block';
+  exitGameBtn.style.display = 'block';
   controlsEl.style.display = 'flex';
-  // CAMBIO NUEVO: segun lo elegido en la pantalla de instrucciones, se dibuja o no el
-  // joystick tactil. El teclado (flechas) sigue funcionando siempre, se vea o no el joystick.
-  joystick.style.display = (controlScheme === 'keyboard') ? 'none' : '';
+  // CAMBIO NUEVO: segun lo elegido en la pantalla de instrucciones, se dibuja el joystick
+  // o las flechas tactiles. El teclado fisico sigue funcionando siempre en cualquiera de
+  // los dos casos (por si hay uno conectado), esto solo decide que se ve en pantalla.
+  const useKeyboard = (controlScheme === 'keyboard');
+  joystick.style.display = useKeyboard ? 'none' : '';
+  dpad.style.display = useKeyboard ? 'grid' : 'none';
   levelProgress.style.display = 'block';
   levelProgressBar.style.width = '0%';
   buildLevel();
@@ -3885,6 +3937,7 @@ function openLevelSelect(){
   instructionsScreen.style.display = 'none';
   costumeSelect.style.display = 'none'; // CAMBIO: por si se venia de la pantalla de Trajes
   hud.style.display = 'none';
+  exitGameBtn.style.display = 'none';
   controlsEl.style.display = 'none';
   renderLevelSelect();
   levelSelect.style.display = 'block';
@@ -3914,6 +3967,7 @@ function openCostumeSelect(){
   levelSelect.style.display = 'none';
   instructionsScreen.style.display = 'none';
   hud.style.display = 'none';
+  exitGameBtn.style.display = 'none';
   controlsEl.style.display = 'none';
   renderCostumeSelect();
   costumeSelect.style.display = 'block';
@@ -4027,6 +4081,7 @@ function openPremiumScreen(){
   levelSelect.style.display = 'none';
   instructionsScreen.style.display = 'none';
   hud.style.display = 'none';
+  exitGameBtn.style.display = 'none';
   controlsEl.style.display = 'none';
   renderSkinGrid();
   premiumSkinsScreen.style.display = 'block';
