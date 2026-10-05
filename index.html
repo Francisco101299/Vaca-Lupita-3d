@@ -225,7 +225,10 @@
   <div id="instructionsScreen" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;text-shadow:2px 2px 0 #000;background:rgba(0,0,0,0.55);padding:26px 30px;border-radius:16px;z-index:30;max-width:88vw;width:380px;box-sizing:border-box;">
     <h1 id="instrTitle" style="font-size:26px;margin:0 0 12px;">Nivel</h1>
     <p style="font-size:14px;line-height:1.4;margin:0 0 10px;">Saltá troncos, esquivá rocas de costado, cruzá el agua en zigzag por las piedras, esquivá los lobos salvajes y llegá a la meta.</p>
-    <p style="font-size:12px;opacity:0.85;margin:0 0 14px;">Flechas para moverte · SALTAR (x2 para doble salto con chorro de leche)</p>
+    <!-- CAMBIO NUEVO: se aclaran las dos formas de controlar a Lupita, para que quede claro
+         antes de arrancar (sirve tanto en celular -joystick en pantalla- como en compu -flechas-). -->
+    <p style="font-size:12px;opacity:0.9;margin:0 0 6px;">🕹️ Con el <b>joystick</b> en pantalla, o ⌨️ con las <b>flechas</b> del teclado, movés a Lupita.</p>
+    <p style="font-size:12px;opacity:0.85;margin:0 0 14px;">Tocá/presioná SALTAR (x2 para doble salto con chorro de leche)</p>
     <button id="instrStartBtn" style="padding:14px 36px;font-size:20px;border:none;border-radius:10px;background:#ffcc00;font-weight:bold;cursor:pointer;">Iniciar partida</button>
     <div><button id="instrBackBtn" style="margin-top:10px;padding:8px 20px;font-size:13px;border:none;border-radius:8px;background:#e8e8e8;font-weight:bold;cursor:pointer;">Volver</button></div>
   </div>
@@ -4047,9 +4050,13 @@ payModalClose.addEventListener('click', ()=>{
 
 // ---------- pantalla de instrucciones (se muestra al elegir un nivel, antes de jugarlo) ----------
 let pendingLevelIndex = 0;
-function openInstructions(levelIndex){
+// CAMBIO NUEVO: a donde vuelve el boton "Volver" de esta pantalla. Por defecto a la seleccion
+// de nivel (como antes); cuando se abre desde "Continuar" se pisa para que vuelva al menu.
+let instrBackTarget = 'levelSelect';
+function openInstructions(levelIndex, backTarget){
   pendingLevelIndex = levelIndex;
   const lvl = LEVELS[levelIndex];
+  instrBackTarget = backTarget || 'levelSelect';
   hideStartMenu(); // CAMBIO: por si se llega directo (ej. "Nueva partida")
   levelSelect.style.display = 'none';
   instrTitle.textContent = (levelIndex+1) + '. ' + lvl.name;
@@ -4059,6 +4066,7 @@ instrStartBtn.addEventListener('click', ()=>{ sfxClick(); tryLockLandscape(); st
 instrBackBtn.addEventListener('click', ()=>{
   sfxClick();
   instructionsScreen.style.display = 'none';
+  if(instrBackTarget === 'startMenu'){ showStartMenu(); return; }
   openLevelSelect();
 });
 
@@ -4540,11 +4548,11 @@ newGameBtn.addEventListener('click', ()=>{
   hasSaveData = true;
   continueBtn.style.display = 'none'; // ya estamos arrancando, no hace falta mostrar "Continuar"
   startMusic();
-  openInstructions(0);
+  openInstructions(0, 'startMenu');
 });
 // "Continuar": salta directo al nivel guardado, sin pasar por seleccion de nivel ni
 // instrucciones (currentLevelIndex ya viene cargado por loadProgress() al arrancar la pagina)
-continueBtn.addEventListener('click', ()=>{ ensureAudio(); sfxClick(); tryLockLandscape(); startMusic(); startGame(currentLevelIndex); });
+continueBtn.addEventListener('click', ()=>{ ensureAudio(); sfxClick(); tryLockLandscape(); startMusic(); openInstructions(currentLevelIndex, 'startMenu'); });
 // "Niveles": pantalla de seleccion de nivel (solo los desbloqueados se pueden tocar)
 levelsBtn.addEventListener('click', ()=>{ ensureAudio(); sfxClick(); tryLockLandscape(); startMusic(); openLevelSelect(); });
 // "Trajes": pantalla dedicada con los 11 trajes (desbloqueados y bloqueados)
