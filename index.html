@@ -88,6 +88,8 @@
   .invisBtn:active{background:rgba(255,255,255,0.22);}
 
   #controls{position:absolute;bottom:0;left:0;width:100%;display:none;justify-content:space-between;align-items:flex-end;padding:14px calc(18px + var(--safe-r)) calc(14px + var(--safe-b)) calc(18px + var(--safe-l));box-sizing:border-box;z-index:10;pointer-events:none;}
+  /* CAMBIO NUEVO: estado "elegido" de los botones de esquema de control (joystick/flechas) */
+  .controlSchemeBtn.selected{border-color:#ffcc00;background:rgba(255,204,0,0.22);}
   #joystick{width:116px;height:116px;border-radius:50%;background:rgba(20,30,35,.30);border:2px solid rgba(255,255,255,.48);box-shadow:0 5px 18px rgba(0,0,0,.18), inset 0 0 0 7px rgba(255,255,255,.06);position:relative;touch-action:none;pointer-events:auto;user-select:none;-webkit-user-select:none;transition:box-shadow .15s ease, border-color .15s ease;}
   #joystick::after{content:'';position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:rgba(255,255,255,.38);}
   /* CAMBIO NUEVO (joystick mas "profesional"): mientras se arrastra, el aro brilla un poco
@@ -225,9 +227,21 @@
   <div id="instructionsScreen" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;text-shadow:2px 2px 0 #000;background:rgba(0,0,0,0.55);padding:26px 30px;border-radius:16px;z-index:30;max-width:88vw;width:380px;box-sizing:border-box;">
     <h1 id="instrTitle" style="font-size:26px;margin:0 0 12px;">Nivel</h1>
     <p style="font-size:14px;line-height:1.4;margin:0 0 10px;">Saltá troncos, esquivá rocas de costado, cruzá el agua en zigzag por las piedras, esquivá los lobos salvajes y llegá a la meta.</p>
-    <!-- CAMBIO NUEVO: se aclaran las dos formas de controlar a Lupita, para que quede claro
-         antes de arrancar (sirve tanto en celular -joystick en pantalla- como en compu -flechas-). -->
-    <p style="font-size:12px;opacity:0.9;margin:0 0 6px;">🕹️ Con el <b>joystick</b> en pantalla, o ⌨️ con las <b>flechas</b> del teclado, movés a Lupita.</p>
+    <!-- CAMBIO NUEVO: se puede elegir con que control jugar. Los dos funcionan siempre por
+         debajo (el teclado nunca se desactiva), pero esto decide que aparece dibujado en
+         pantalla: el joystick tactil, o nada (para jugar solo con flechas, con mas pantalla
+         libre). La eleccion se guarda y se recuerda la proxima vez. -->
+    <p style="font-size:12px;opacity:0.9;margin:0 0 8px;">¿Cómo querés moverte?</p>
+    <div style="display:flex;gap:10px;justify-content:center;margin:0 0 12px;">
+      <button id="schemeJoystickBtn" type="button" class="controlSchemeBtn" style="flex:1;max-width:150px;padding:10px 6px;border-radius:12px;cursor:pointer;background:rgba(255,255,255,0.12);border:3px solid transparent;color:#fff;">
+        <div style="font-size:28px;line-height:1;">🕹️</div>
+        <div style="font-size:12px;font-weight:bold;margin-top:4px;">Joystick</div>
+      </button>
+      <button id="schemeKeyboardBtn" type="button" class="controlSchemeBtn" style="flex:1;max-width:150px;padding:10px 6px;border-radius:12px;cursor:pointer;background:rgba(255,255,255,0.12);border:3px solid transparent;color:#fff;">
+        <div style="font-size:28px;line-height:1;">⌨️</div>
+        <div style="font-size:12px;font-weight:bold;margin-top:4px;">Flechas</div>
+      </button>
+    </div>
     <p style="font-size:12px;opacity:0.85;margin:0 0 14px;">Tocá/presioná SALTAR (x2 para doble salto con chorro de leche)</p>
     <button id="instrStartBtn" style="padding:14px 36px;font-size:20px;border:none;border-radius:10px;background:#ffcc00;font-weight:bold;cursor:pointer;">Iniciar partida</button>
     <div><button id="instrBackBtn" style="margin-top:10px;padding:8px 20px;font-size:13px;border:none;border-radius:8px;background:#e8e8e8;font-weight:bold;cursor:pointer;">Volver</button></div>
@@ -611,6 +625,22 @@ const instructionsScreen = document.getElementById('instructionsScreen');
 const instrTitle = document.getElementById('instrTitle');
 const instrStartBtn = document.getElementById('instrStartBtn');
 const instrBackBtn = document.getElementById('instrBackBtn');
+// CAMBIO NUEVO: esquema de control elegido ('joystick' o 'keyboard'). El teclado funciona
+// siempre por debajo; esto solo decide si se dibuja el joystick tactil en pantalla.
+let controlScheme = 'joystick';
+const schemeJoystickBtn = document.getElementById('schemeJoystickBtn');
+const schemeKeyboardBtn = document.getElementById('schemeKeyboardBtn');
+function syncControlSchemeButtons(){
+  schemeJoystickBtn.classList.toggle('selected', controlScheme==='joystick');
+  schemeKeyboardBtn.classList.toggle('selected', controlScheme==='keyboard');
+}
+function setControlScheme(scheme){
+  controlScheme = scheme;
+  syncControlSchemeButtons();
+  saveProgress();
+}
+schemeJoystickBtn.addEventListener('click', ()=>{ sfxClick(); setControlScheme('joystick'); });
+schemeKeyboardBtn.addEventListener('click', ()=>{ sfxClick(); setControlScheme('keyboard'); });
 const hud = document.getElementById('hud');
 const controlsEl = document.getElementById('controls');
 const fxVignette = document.getElementById('vignette');
@@ -3426,6 +3456,7 @@ function saveProgress(){
       selectedSkin,
       lastScore: score,
       lastLives: lives,
+      controlScheme,
       savedAt: Date.now()
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
@@ -3451,6 +3482,10 @@ function loadProgress(){
     }
     if(Number.isInteger(data.currentLevelIndex)){
       currentLevelIndex = Math.max(0, Math.min(LEVELS.length-1, data.currentLevelIndex));
+    }
+    if(data.controlScheme === 'joystick' || data.controlScheme === 'keyboard'){
+      controlScheme = data.controlScheme;
+      syncControlSchemeButtons();
     }
     if(Array.isArray(data.unlockedCostumes)){
       // se reconstruye a mano (en vez de reemplazar el array entero) para no perder el
@@ -3673,6 +3708,9 @@ function startGame(levelIndex){
   hideStartMenu();
   hud.style.display = 'block';
   controlsEl.style.display = 'flex';
+  // CAMBIO NUEVO: segun lo elegido en la pantalla de instrucciones, se dibuja o no el
+  // joystick tactil. El teclado (flechas) sigue funcionando siempre, se vea o no el joystick.
+  joystick.style.display = (controlScheme === 'keyboard') ? 'none' : '';
   levelProgress.style.display = 'block';
   levelProgressBar.style.width = '0%';
   buildLevel();
@@ -4060,6 +4098,7 @@ function openInstructions(levelIndex, backTarget){
   hideStartMenu(); // CAMBIO: por si se llega directo (ej. "Nueva partida")
   levelSelect.style.display = 'none';
   instrTitle.textContent = (levelIndex+1) + '. ' + lvl.name;
+  syncControlSchemeButtons();
   instructionsScreen.style.display = 'block';
 }
 instrStartBtn.addEventListener('click', ()=>{ sfxClick(); tryLockLandscape(); startGame(pendingLevelIndex); });
