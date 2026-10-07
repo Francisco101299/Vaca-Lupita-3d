@@ -177,6 +177,14 @@
   </div>
   <button id="exitGameBtn">✖ Salir</button>
   <div id="startMenu">
+    <!-- CAMBIO NUEVO: franja de texto real (no imagen) describiendo el juego. El menu de
+         arriba es todo una imagen con los botones dibujados adentro, asi que para Google
+         (y para AdSense) la pagina practicamente no tenia texto real para leer. Esto le da
+         contenido legible genuino, visible ni bien carga la pagina, sin estorbar el juego. -->
+    <div style="position:absolute;left:0;right:0;bottom:0;z-index:2;pointer-events:none;background:rgba(0,0,0,0.55);color:#fff;text-shadow:1px 1px 0 #000;padding:6px 10px calc(6px + var(--safe-b));box-sizing:border-box;font-size:11px;line-height:1.35;">
+      <h1 style="font-size:13px;margin:0 0 2px;">Las aventuras de Lupita la vaca</h1>
+      <p style="margin:0;opacity:0.92;">Juego de plataformas en 3D para toda la familia: ayudá a Lupita a cruzar niveles, saltar obstáculos y juntar monedas. Jugá gratis desde el celular o la computadora, con joystick táctil o con las flechas del teclado, y desbloqueá trajes y personajes especiales como el cerdito, la cabra, el caballo y el toro.</p>
+    </div>
     <!-- CAMBIO NUEVO (v3): siguiendo el pedido del usuario, ahora se usa la imagen COMPLETA
          del panel (titulo + 4 botones) tal cual la subio, sin recortar cada boton por
          separado -eso era lo que se veia feo, con los bordes de cada recorte notandose-.
