@@ -10,6 +10,20 @@
 <!-- CAMBIO NUEVO: manifest + iconos, necesarios para que PWABuilder (o similar) pueda
      empaquetar el juego como app de Android (.apk) a partir de la pagina publicada. -->
 <link rel="manifest" href="/manifest.json">
+<!-- CAMBIO NUEVO: Google AdSense + H5 Games Ads. Funciona tanto en la pagina web como
+     dentro del APK, porque la app es un TWA (muestra esta misma pagina por dentro).
+     data-adbreak-test="on" = modo de prueba: mientras la cuenta de AdSense este en
+     revision, muestra anuncios falsos (no gana dinero, pero tampoco rompe nada ni
+     viola politicas). CUANDO GOOGLE APRUEBE LA CUENTA: borrar el atributo
+     data-adbreak-test="on" de la linea de abajo (o cambiarlo a "off") para que
+     empiecen a mostrarse anuncios reales. -->
+<script async data-adbreak-test="on"
+  src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3563709125050200"
+  crossorigin="anonymous"></script>
+<script>
+  window.adsbygoogle = window.adsbygoogle || [];
+  var adBreak = adConfig = function(o){ adsbygoogle.push(o); };
+</script>
 <link rel="icon" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <title>Las aventuras de Lupita la vaca</title>
@@ -442,6 +456,22 @@ function requestRewardedAd(done){
   if(window.AdMobBridge && typeof window.AdMobBridge.requestRewardedAd === 'function'){
     setAudioMuted(true);
     window.AdMobBridge.requestRewardedAd((success)=>{ setAudioMuted(false); done(!!success); });
+    return;
+  }
+  // CAMBIO NUEVO: Google AdSense / H5 Games Ads. Es el camino real para este juego (web +
+  // APK tipo TWA). Mientras data-adbreak-test este en "on" (ver <head>) muestra un anuncio
+  // de prueba y SI revive, para poder probar el flujo completo sin esperar la aprobacion.
+  if(typeof window.adBreak === 'function'){
+    let rewarded = false;
+    setAudioMuted(true);
+    window.adBreak({
+      type: 'reward',
+      name: 'revivir',
+      beforeReward: (showAdFn)=>{ showAdFn(); },
+      adViewed: ()=>{ rewarded = true; },
+      adDismissed: ()=>{ rewarded = false; },
+      adBreakDone: ()=>{ setAudioMuted(false); done(rewarded); }
+    });
     return;
   }
   done(false);
