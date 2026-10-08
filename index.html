@@ -10,6 +10,14 @@
 <!-- CAMBIO NUEVO: manifest + iconos, necesarios para que PWABuilder (o similar) pueda
      empaquetar el juego como app de Android (.apk) a partir de la pagina publicada. -->
 <link rel="manifest" href="/manifest.json">
+<script>
+// CAMBIO NUEVO: registra el service worker (sw.js) que guarda el juego en el dispositivo
+// para que despues se pueda jugar sin internet. Si falla (navegador viejo, etc.) no rompe
+// nada, el juego sigue funcionando normal, solo que sin modo offline.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('/sw.js').catch(()=>{}); });
+}
+</script>
 <!-- CAMBIO NUEVO: Google AdSense + H5 Games Ads. Funciona tanto en la pagina web como
      dentro del APK, porque la app es un TWA (muestra esta misma pagina por dentro).
      data-adbreak-test="on" = modo de prueba: mientras la cuenta de AdSense este en
